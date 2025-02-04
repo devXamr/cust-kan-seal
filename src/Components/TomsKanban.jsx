@@ -3,6 +3,39 @@ import { FiPlus, FiTrash } from "react-icons/fi";
 import { motion } from "motion/react";
 import { FaFire } from "react-icons/fa";
 
+
+export function getCategories(){
+    const cats = JSON.parse(localStorage.getItem('categories'))
+
+    if(!cats){
+        return []
+    } else return cats
+}
+
+export function getColumns() {
+    const cols = JSON.parse(localStorage.getItem('columns'))
+
+    if (!cols) {
+        return []
+    } else return cols
+
+}
+export function getCards(){
+    const cards = JSON.parse(localStorage.getItem('cards'))
+
+    if(!cards){
+        return []
+    } else return cards
+}
+
+export function getFilteredCards(){
+    const cards = JSON.parse(localStorage.getItem('filteredCards'))
+
+    if(!cards){
+        return []
+    } else return cards
+}
+
 export const TomsKanban = () => {
     return (
         <div className="h-screen w-full bg-neutral-900 text-neutral-50">
@@ -12,16 +45,48 @@ export const TomsKanban = () => {
 };
 
 const Board = () => {
-    const [cards, setCards] = useState([]);
-    const [columns, setColumns] = useState([])
+    const [cards, setCards] = useState(getCards);
+    const [columns, setColumns] = useState(getColumns)
     const [openModal, setOpenModal] = useState(false)
     const [currentModalValue, setCurrentModalValue] = useState('')
-    const [allCategories, setAllCategories] = useState([])
+    const [allCategories, setAllCategories] = useState(getCategories)
     const [categoryModalOpen, setCategoryModalOpen] = useState(false)
     const [currentCategoryValue, setCurrentCategoryValue] = useState('')
     const [showFilters, setShowFilters] = useState(false)
     const [setFilter, setSetFilter] = useState('')
-    const [filteredCards, setFilteredCards] = useState([])
+    const [filteredCards, setFilteredCards] = useState(getFilteredCards)
+    const [categoryColor, setCategoryColor] = useState('')
+
+    useEffect(() => {
+        localStorage.setItem('cards', JSON.stringify(cards) )
+    }, [cards]);
+
+    useEffect(() => {
+        localStorage.setItem('filteredCards', JSON.stringify(filteredCards))
+    }, [filteredCards]);
+
+    useEffect(() => {
+        localStorage.setItem('categories', JSON.stringify(allCategories) )
+    }, [allCategories]);
+
+
+    useEffect(() => {
+        localStorage.setItem('columns', JSON.stringify(columns))
+    }, [columns]);
+
+    function getMeTheCss(color){
+        if (color === 'red') {
+            return 'text-red-500 border border-red-500 border-dotted px-2 py-1 rounded-3xl bg-red-500 bg-opacity-20'
+        } else if (color === 'pink') {
+            return 'text-pink-500 border border-pink-500 border-dotted px-2 py-1 rounded-3xl bg-red-500 bg-opacity-20'
+        } else if (color === 'blue') {
+            return 'text-blue-500 border border-blue-500 border-dotted px-2 py-1 rounded-3xl bg-blue-500 bg-opacity-20'
+        } else if (color === 'yellow') {
+            return 'text-yellow-500 border border-yellow-500 border-dotted px-2 py-1 rounded-3xl bg-yellow-500 bg-opacity-20'
+        } else if (color === 'green') {
+            return 'text-green-500 border border-green-500 border-dotted px-2 py-1 rounded-3xl bg-green-500 bg-opacity-20'
+        }
+    }
 
     const addNewColumn = (columnName) => {
         setColumns( prev => [...prev, columnName])
@@ -42,31 +107,59 @@ const Board = () => {
         setCurrentModalValue(e.target.value)
     }
 
-    function handleCategoryAddition(newCat){
-        setAllCategories(prev => [...prev, newCat])
+    function handleCategoryAddition(newCat, catColor){
+        setAllCategories(prev => [...prev, {name: newCat, color: catColor}])
     }
 
-    return (<div>
-            <div onClick={() => setOpenModal(true)}
+
+    function catColorSetter(e){
+        setCategoryColor(e.target.value)
+    }
+    return (<div className='font-satoshi'>
+            <div className='flex px-5 py-5 bg-gray-900'>
+            <div onClick={() => {
+                setOpenModal(true)
+                setCategoryModalOpen(false)
+                setShowFilters(false)
+            }}
                  className={` bg-black w-fit py-3 px-3 rounded-lg hover:cursor-pointer font-medium ml-4 hover:bg-opacity-90 duration-200`}>Add
                 Column
             </div>
-            <div onClick={() => setCategoryModalOpen(true)}
+                <div onClick={() => {
+                    setCategoryModalOpen(true)
+                    setOpenModal(false)
+                    setShowFilters(false)
+                }}
                  className={` bg-black w-fit py-3 px-3 rounded-lg hover:cursor-pointer font-medium ml-4 hover:bg-opacity-90 duration-200`}> Add/Manage
                 Categories
             </div>
 
 
             <div
-                 className={` bg-black w-fit py-3 px-3 rounded-lg hover:cursor-pointer font-medium ml-4 hover:bg-opacity-90 duration-200`} onClick={() => setShowFilters(prev => !prev)}> Filter by category
+                 className={` bg-black w-fit py-3 px-3 rounded-lg hover:cursor-pointer font-medium ml-4 hover:bg-opacity-90 duration-200`} onClick={() => {
+                     setShowFilters(prev => !prev)
+                setCategoryModalOpen(false)
+                setOpenModal(false)
+                 }
+            }> Filter
 
 
 
-            {showFilters && <div className='text-white'>
-                {allCategories.map(each => <div onClick={() => handleSettingFilter(each)}>{each}</div>)}
-            </div>}
+
+
+
 
             </div>
+
+            </div>
+
+            {(showFilters && allCategories.length > 0) && <div className='text-white bg-black w-fit absolute left-[385px] py-4 px-12 rounded-md top-20'>
+                {allCategories.map(each => <div className={getMeTheCss(each.color)}  onClick={() => handleSettingFilter(each.name)}>{each.name}</div>)}
+            </div>}
+
+
+            {(showFilters && allCategories.length === 0) && <div className='bg-black w-fit absolute left-[385px] py-4 px-12 rounded-md top-20'>No categories added.</div> }
+
 
         {setFilter !== '' &&  <div onClick={() => {
                 setSetFilter('')
@@ -75,13 +168,24 @@ const Board = () => {
 
 
             {categoryModalOpen &&
-                <div className='bg-black px-4  w-fit absolute left-4 top-20 rounded-b-xl rounded-tr-xl pb-4'>
-                    <input autoFocus className='bg-black  mt-4 py-2 px-4 rounded-md
+                <div className='bg-black px-4  w-fit absolute left-[170px] top-20 rounded-b-xl rounded-tr-xl pb-4'>
+                    <input autoFocus className='bg-black  mt-4 py-2 px-4 border rounded-md
        ' type="text" placeholder='Add new category name here' value={currentCategoryValue}
                            onChange={(e) => setCurrentCategoryValue(e.target.value)}/>
 
+                    <div className='flex mt-4'>
+                    <div>Select a color: </div>
+                        <div className='flex flex-wrap max-w-16'>
+                            <div className={`bg-red-500 rounded-full min-w-5 min-h-5 h-5 w-5 ${categoryColor === 'red' && 'border-white border-2'}`} onClick={() => setCategoryColor('red')}> </div>
+                            <div className={`bg-blue-500 rounded-full min-w-5 min-h-5 h-5 w-5 ${categoryColor === 'blue' && 'border-white border-2'}`} onClick={() => setCategoryColor('blue')}> </div>
+                            <div className={`bg-yellow-500 rounded-full min-w-5 min-h-5 h-5 w-5 ${categoryColor === 'yellow' && 'border-white border-2'}`} onClick={() => setCategoryColor('yellow')}> </div>
+                            <div className={`bg-green-500 rounded-full min-w-5 min-h-5 h-5 w-5 ${categoryColor === 'green' && 'border-white border-2'}`} onClick={()=> setCategoryColor('green')}> </div>
+                            <div className={`bg-pink-500 rounded-full min-w-5 min-h-5 h-5 w-5 ${categoryColor === 'pink' && 'border-white border-2'}`} onClick={() => setCategoryColor('pink')}></div>
+                        </div>
+
+                    </div>
                     <div className='flex'>
-                        <div onClick={() => handleCategoryAddition(currentCategoryValue)}
+                        <div onClick={() => handleCategoryAddition(currentCategoryValue, categoryColor)}
                              className='bg-black  mt-3 px-2 py-1.5 w-fit rounded-lg hover:bg-opacity-10 hover:cursor-pointer mx-auto hover:border-white border border-black border-opacity-5'>Add
                             Category
                         </div>
@@ -90,16 +194,16 @@ const Board = () => {
                         </div>
                     </div>
 
-                    {allCategories.map(eachCat => <div>{eachCat}</div>)}
+                    {allCategories.map(eachCat => <div className={`${getMeTheCss(eachCat.color)} w-fit`}>{eachCat.name}</div>)}
 
 
                 </div>}
 
 
             {openModal &&
-                <div className='bg-black px-4  w-fit absolute left-4 top-20 rounded-b-xl rounded-tr-xl pb-4'>
-                    <input autoFocus className='bg-black  mt-4 py-2 px-4 rounded-md
-       ' type="text" placeholder='Add your modal name here' value={currentModalValue}
+                <div className='bg-black px-4  w-fit absolute left-9 top-20 rounded-b-xl rounded-tr-xl pb-4'>
+                    <input autoFocus className='bg-black border autofocus mt-4 py-2 px-4 rounded-md
+       ' type="text" placeholder='' value={currentModalValue}
                            onChange={(e) => changeModalValue(e)}/>
 
                     <div className='flex'>
@@ -113,17 +217,17 @@ const Board = () => {
                     </div>
                 </div>}
 
-            <div className="flex h-full w-full gap-3 overflow-scroll p-12">
+            <div className="flex h-full w-full gap-3 overflow-x-auto p-12">
 
                 {columns.map(eachCol => <Column title={eachCol} column={eachCol.toLowerCase()} cards={ setFilter === '' ? cards : filteredCards}
-                                                setCards={setCards} allCats={allCategories}/>)}
-                <BurnBarrel setCards={setCards}/>
+                                                setCards={setFilter === '' ? setCards : setFilteredCards} allCats={allCategories} cssFunc={getMeTheCss}/>)}
+                {columns.length > 0  && <BurnBarrel setCards={setCards}/>}
             </div>
         </div>
     );
 };
 
-const Column = ({title, cards, column, setCards, allCats}) => {
+const Column = ({title, cards, column, setCards, allCats, cssFunc}) => {
     const [active, setActive] = useState(false);
 
     const handleDragStart = (e, card) => {
@@ -250,7 +354,7 @@ const Column = ({title, cards, column, setCards, allCats}) => {
                     return <Card key={c.id} {...c} handleDragStart={handleDragStart} />;
                 })}
                 <DropIndicator beforeId={null} column={column} />
-                <AddCard column={column} setCards={setCards} allCategories={ allCats} />
+                <AddCard column={column} setCards={setCards} allCategories={ allCats} cssFunc={cssFunc} />
             </div>
         </div>
     );
@@ -320,7 +424,7 @@ const BurnBarrel = ({ setCards }) => {
     );
 };
 
-const AddCard = ({ column, setCards, allCategories }) => {
+const AddCard = ({ column, setCards, allCategories, cssFunc }) => {
     const [text, setText] = useState("");
     const [adding, setAdding] = useState(false);
     const [openCategorySelectionMenu, setOpenCategorySelectionMenu] = useState(false)
@@ -357,7 +461,10 @@ const AddCard = ({ column, setCards, allCategories }) => {
           />
 
                     <div className='bg-white text-black w-fit' onClick={() => {setOpenCategorySelectionMenu(true)}}>{selectedCategory === '' ? 'Select a category' : selectedCategory + 'click to change'}</div>
-                    {openCategorySelectionMenu && <div className='relative'>{allCategories.map(eachCat => <div onClick={() => setSelectedCategory(eachCat)}>{eachCat}</div>)}</div>}
+
+
+                    {openCategorySelectionMenu && <div className='relative flex flex-wrap'>{allCategories.map(eachCat => <div className={`${cssFunc(eachCat.color)} w-fit`} onClick={() => setSelectedCategory(eachCat.name)}>{eachCat.name}</div>)}</div>}
+
                     <div className="mt-1.5 flex items-center justify-end gap-1.5">
                         <button
                             onClick={() => setAdding(false)}
